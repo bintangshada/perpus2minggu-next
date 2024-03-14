@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(uuid())
+  externalId String   @unique
+  username   String   @unique
+  email      String   @unique
+  role       Role     @default(user)
+  Loan       Loan[]
+  attributes Json?
+  Review     Review[]
+
+  @@map("users")
+}
+
+model Book {
+  id          String   @id @default(uuid())
+  title       String
+  author      String
+  id_category String
+  category    Category @relation(fields: [id_category], references: [id])
+  quantity    Int
+  image       Bytes?
+  Loan        Loan[]
+  Review      Review[]
+
+  @@map("books")
+}
+
+model Category {
+  id   String @id @default(uuid())
+  name String
+  Book Book[]
+}
+
+model Loan {
+  id         String    @id @default(uuid())
+  user_id    String
+  book_id    String
+  borrowedAt DateTime  @default(now())
+  returnedAt DateTime?
+  approved   Boolean   @default(false)
+  book       Book      @relation(fields: [book_id], references: [id])
+  user       User      @relation(fields: [user_id], references: [id])
+  status     Status    @default(borrowed)  
+
+  @@index([book_id], map: "loans_book_id_fkey")
+  @@index([user_id], map: "loans_user_id_fkey")
+  @@map("loans")
+}
+
+model Review {
+  id      String @id @default(uuid())
+  user_id String
+  book_id String
+  reviews String
+  user    User   @relation(fields: [user_id], references: [id])
+  book    Book   @relation(fields: [book_id], references: [id])
+
+  @@index([book_id], map: "reviews_book_id_fkey")
+  @@index([user_id], map: "reviews_user_id_fkey")
+  @@map("revies")
+}
+
+enum Role {
+  user
+  petugas
+  admin
+}
+
+enum Status {
+  returned
+  borrowed
+}
